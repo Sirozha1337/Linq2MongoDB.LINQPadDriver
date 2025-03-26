@@ -1,5 +1,7 @@
 # This is a LINQPad driver for MongoDB
 
+[![NuGet Version](https://img.shields.io/nuget/vpre/Linq2MongoDB.LINQPadDriver)](https://www.nuget.org/packages/Linq2MongoDB.LINQPadDriver) [![License](https://img.shields.io/github/license/Sirozha1337/Linq2MongoDB.LINQPadDriver)](MIT-LICENSE.txt)
+
 This driver allows you to query MongoDB using [LINQPad](https://www.linqpad.net/).
 
 This driver is based on the mkjeff's [MongoDB driver for .NET](https://github.com/mkjeff/Mongodb.LINQPadDriver).
