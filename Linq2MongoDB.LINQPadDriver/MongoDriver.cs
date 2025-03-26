@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
+using LINQPad;
 using LINQPad.Extensibility.DataContext;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
 
-namespace MongoDB.LINQPadDriver
+namespace Linq2MongoDB.LINQPadDriver
 {
     public sealed class MongoDriver : DynamicDataContextDriver
     {
@@ -21,7 +20,7 @@ namespace MongoDB.LINQPadDriver
 #if DEBUG
             AppDomain.CurrentDomain.FirstChanceException += (sender, args) =>
             {
-                if (args.Exception.StackTrace.Contains(typeof(MongoDriver).Namespace))
+                if (args.Exception!.StackTrace!.Contains(typeof(MongoDriver)!.Namespace!))
                 {
                     Debugger.Launch();
                 }
@@ -30,7 +29,7 @@ namespace MongoDB.LINQPadDriver
         }
 
         public override string Name => "MongoDB Driver " + Version;
-        public override string Author => "mkjeff";
+        public override string Author => "Sirozha1337";
         public override Version Version => typeof(MongoDriver).Assembly.GetName().Version;
 
         public override bool AreRepositoriesEquivalent(IConnectionInfo c1, IConnectionInfo c2)
@@ -48,7 +47,7 @@ namespace MongoDB.LINQPadDriver
             {
                 "MongoDB.Driver",
                 "MongoDB.Driver.Linq",
-            }.Concat(cxInfo.DatabaseInfo.Server.Split(';'));
+            };
         }
 
         private static readonly HashSet<string> ExcludedCommand = new HashSet<string>
@@ -60,10 +59,30 @@ namespace MongoDB.LINQPadDriver
             "getLastError",
         };
 
+        private static readonly HashSet<string> SchemaRefreshCommands = new HashSet<string>
+        {
+            "create",
+            "drop",
+        };
+
+        private static MongoClientSettings GetMongoClientSettings(IConnectionInfo cxInfo)
+            => MongoClientSettings.FromUrl(new MongoUrl(cxInfo.DatabaseInfo.CustomCxString));
+
+        private IMongoDatabase GetDatabase(IConnectionInfo cxInfo) => GetDatabase(cxInfo, GetMongoClientSettings(cxInfo));
+
+        private IMongoDatabase GetDatabase(IConnectionInfo cxInfo, MongoClientSettings mongoClientSettings)
+        {
+            var client = new MongoClient(mongoClientSettings);
+            return client.GetDatabase(cxInfo.DatabaseInfo.Database);
+        }
+
         public override void InitializeContext(IConnectionInfo cxInfo, object context, QueryExecutionManager executionManager)
         {
-            //Debugger.Launch();
-            var mongoClientSettings = MongoClientSettings.FromUrl(new MongoUrl(cxInfo.DatabaseInfo.CustomCxString));
+            #if DEBUG
+            Debugger.Launch();
+            #endif
+
+            var mongoClientSettings = GetMongoClientSettings(cxInfo);
             mongoClientSettings.ClusterConfigurator = cb => cb
                 .Subscribe<CommandStartedEvent>(e =>
                 {
@@ -78,16 +97,22 @@ namespace MongoDB.LINQPadDriver
                     {
                         executionManager.SqlTranslationWriter.WriteLine($"\t Duration = {e.Duration} \n");
                     }
+
+                    if (SchemaRefreshCommands.Contains(e.CommandName))
+                    {
+                        cxInfo.ForceRefresh();
+                    }
                 });
+            var mongoDatabase = GetDatabase(cxInfo, mongoClientSettings);
 
-            var client = new MongoClient(mongoClientSettings);
-            var mongoDatabase = client.GetDatabase(cxInfo.DatabaseInfo.Database);
-
-            context.GetType().GetMethod("Initial", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(context, new[] { mongoDatabase });
+            context.GetType().GetMethod("Initial", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(context, new object[] { mongoDatabase });
         }
 
         public override string GetConnectionDescription(IConnectionInfo cxInfo)
-            => "MongoDb - " + cxInfo.DatabaseInfo.CustomCxString + " properties";
+            => !string.IsNullOrWhiteSpace(cxInfo.DisplayName) ? cxInfo.DisplayName : GetDefaultConnectionName(cxInfo);
+
+        private static string GetDefaultConnectionName(IConnectionInfo cxInfo)
+            => $"MongoDB - {GetMongoClientSettings(cxInfo).Server.Host} - {cxInfo.DatabaseInfo.Database}";
 
         public override bool ShowConnectionDialog(IConnectionInfo cxInfo, ConnectionDialogOptions dialogOptions)
             => new ConnectionDialog(cxInfo).ShowDialog() == true;
@@ -95,83 +120,51 @@ namespace MongoDB.LINQPadDriver
         public override List<ExplorerItem> GetSchemaAndBuildAssembly(
             IConnectionInfo cxInfo, AssemblyName assemblyToBuild, ref string nameSpace, ref string typeName)
         {
-#if DEBUG
+            #if DEBUG
             Debugger.Launch();
-#endif
-            var @namespaces = cxInfo.DatabaseInfo.Server.Split(';');
-            var types = LoadAssemblySafely(cxInfo.CustomTypeInfo.GetAbsoluteCustomAssemblyPath()).GetTypes()
-                .Where(a => @namespaces.Contains(a.Namespace) && a.IsPublic)
-                .Select(a => a.Name)
-                .ToHashSet();
+            #endif
 
-            var mongoClientSettings = MongoClientSettings.FromUrl(new MongoUrl(cxInfo.DatabaseInfo.CustomCxString));
-            var client = new MongoClient(mongoClientSettings);
-            var collections =
-                (from c in client.GetDatabase(cxInfo.DatabaseInfo.Database).ListCollectionNames().ToList()
-                 where char.IsUpper(c[0]) // ignore system collection
-                 orderby c
-                 select (collectionName: c, type: types.Contains(c) ? c : nameof(BsonDocument))
-                 ).ToList();
+            var mongoDatabase = GetDatabase(cxInfo);
+            var collections = new List<CollectionItem>();
+            int invalidCounter = 0;
+            int duplicateCounter = 0;
+            foreach (var collectionName in mongoDatabase.ListCollectionNames().ToList())
+            {
+                var collectionPropertyName = StringSanitizer.SanitizeCollectionName(collectionName) ?? $"InvalidName{++invalidCounter}";
 
-            var source = @$"using System;
-using System.Collections.Generic;
-using System.Linq;
-using MongoDB.Bson;
-using MongoDB.Driver;
-{ string.Join(Environment.NewLine, @namespaces.Select(n => "using " + n + ";")) }
+                if (collections.Any(c => c.CollectionPropertyName == collectionPropertyName))
+                {
+                    collectionPropertyName = $"DuplicateName{++duplicateCounter}";
+                }
 
-namespace {nameSpace}" +
-@"{
-    // The main typed data class. The user's queries subclass this, so they have easy access to all its members.
-	public class " + typeName + @"
-	{
-        public IMongoDatabase Database => _db;
-        private IMongoDatabase _db;
-        internal void Initial(IMongoDatabase db)
-        {
-            _db = db;
-        }
-    
-        private Lazy<IMongoCollection<T>> InitCollection<T>(string collectionName)
-            => new Lazy<IMongoCollection<T>>(()=>_db.GetCollection<T>(collectionName));
-        
-        public " + typeName + @"()
-        {
-" + string.Join("\n", collections.Select(c =>
-             $"_{c.collectionName} = InitCollection<{c.type}>(\"{c.collectionName}\");"))
-+ @"}
+                collections.Add(new CollectionItem(collectionName, collectionPropertyName));
+            }
+            mongoDatabase.Client.Cluster.Dispose();
+            mongoDatabase.Client.Dispose();
 
-" + string.Join("\n",
-        collections.Select(c =>
-        $@"
-            private readonly Lazy<IMongoCollection<{c.type}>> _{c.collectionName};
-            public IMongoCollection<{c.type}> {c.collectionName} => _{c.collectionName}.Value;"))
-+ @"}	
-}";
-
-            Compile(source, assemblyToBuild.CodeBase,
-                Directory.GetFiles(new FileInfo(cxInfo.CustomTypeInfo.GetAbsoluteCustomAssemblyPath()).DirectoryName, "*.dll")
-                .Concat(new[]{
+            var source = DataContextSourceGenerator.GenerateSource(nameSpace, typeName, collections);
+            Compile(cxInfo, source, assemblyToBuild.CodeBase, new[]{
                     typeof(IMongoDatabase).Assembly.Location,
                     typeof(BsonDocument).Assembly.Location,
-                    }));
+                    typeof(QueryableMongoCollection).Assembly.Location
+            });
 
             // We need to tell LINQPad what to display in the TreeView on the left (Schema Explorer):
             var schemas = collections.Select(a =>
-                new ExplorerItem(a.collectionName, ExplorerItemKind.QueryableObject, ExplorerIcon.Table)
+                new ExplorerItem(a.DisplayName(), ExplorerItemKind.QueryableObject, ExplorerIcon.Table)
                 {
                     IsEnumerable = true,
-                    DragText = a.collectionName,
+                    DragText = a.CollectionPropertyName,
                 });
 
             return schemas.ToList();
         }
 
-        private static void Compile(string cSharpSourceCode, string outputFile, IEnumerable<string> customTypeAssemblyPath)
+        private static void Compile(IConnectionInfo cxInfo, string cSharpSourceCode, string outputFile, IEnumerable<string> customTypeAssemblyPath)
         {
             // GetCoreFxReferenceAssemblies is helper method that returns the full set of .NET Core reference assemblies.
             // (There are more than 100 of them.)
-            var assembliesToReference = GetCoreFxReferenceAssemblies().Concat(customTypeAssemblyPath).ToArray();
+            var assembliesToReference = GetCoreFxReferenceAssemblies(cxInfo).Concat(customTypeAssemblyPath).ToArray();
 
             // CompileSource is a static helper method to compile C# source code using LINQPad's built-in Roslyn libraries.
             // If you prefer, you can add a NuGet reference to the Roslyn libraries and use them directly.
@@ -185,6 +178,19 @@ namespace {nameSpace}" +
             if (compileResult.Errors.Length > 0)
             {
                 throw new Exception("Cannot compile typed context: " + compileResult.Errors[0]);
+            }
+        }
+
+        public override void PreprocessObjectToWrite(ref object objectToWrite, ObjectGraphInfo info)
+        {
+            if (objectToWrite is BsonDocument document)
+            {
+                objectToWrite = BsonTypeMapper.MapToDotNetValue(document);
+            }
+
+            if (objectToWrite is BsonArray array)
+            {
+                objectToWrite = BsonTypeMapper.MapToDotNetValue(array);
             }
         }
     }

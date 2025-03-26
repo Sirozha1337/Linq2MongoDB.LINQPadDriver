@@ -1,31 +1,12 @@
-﻿<Window x:Class="MongoDB.LINQPadDriver.ConnectionDialog"
+﻿<Window x:Class="Linq2MongoDB.LINQPadDriver.ConnectionDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Universal Demo Connection"
+    Title="MongoDB Connection"
     Background="{x:Static SystemColors.ControlBrush}"
     SizeToContent="Height"
     Width="500" 
     WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" WindowStyle="ToolWindow">
     <StackPanel Margin="12">
-
-        <DockPanel>
-            <Label DockPanel.Dock="Right" Padding="1">
-                <Hyperlink Click="BrowseAssembly">Browse...</Hyperlink>
-            </Label>
-            <Label Padding="0,0,0,1">Path to typed documents assembly:</Label>
-        </DockPanel>
-
-        <TextBox Name="txtAssemblyPath" Padding="2" Margin="0,1,0,9" Text="{Binding CustomTypeInfo.CustomAssemblyPath}"/>
-
-        <DockPanel>
-            <!--<Label DockPanel.Dock="Right" Padding="1">
-                <Hyperlink Click="ChooseNamespace">Choose...</Hyperlink>
-            </Label>-->
-            <Label Padding="0,0,0,1">Document Type Namespace:</Label>
-        </DockPanel>
-
-        <TextBox Name="txtTypeName" Padding="2" Margin="0,1,0,9" ToolTip="';' separator for multiple" Text="{Binding DatabaseInfo.Server}"/>
-
         <DockPanel>
             <Label Padding="0,0,0,1">Connection URL:</Label>
         </DockPanel>
@@ -37,15 +18,6 @@
         </DockPanel>
 
         <TextBox Name="txtDatabaseName" Padding="2" Margin="0,1,0,9" Text="{Binding DatabaseInfo.Database}"/>
-
-        <DockPanel>
-            <Label DockPanel.Dock="Right" Padding="1">
-                <Hyperlink Click="BrowseAppConfig">Browse...</Hyperlink>
-            </Label>
-            <Label Padding="0,0,0,1">Path to appsettings.json file (if required):</Label>
-        </DockPanel>
-
-        <TextBox Name="txtAppConfigPath" Padding="2" Margin="0,1,0,9" Text="{Binding AppConfigPath}"/>
 
         <Label Padding="0,0,0,2">Friendly name for this connection (optional):</Label>
         <TextBox Name="txtFriendlyName" Padding="2" Text="{Binding DisplayName}" />
