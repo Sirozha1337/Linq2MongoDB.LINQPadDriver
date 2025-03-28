@@ -18,7 +18,7 @@
     <Description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Version>1.0.1</Version>
-    <PackageReadmeFile>../README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="LINQPad.Reference" Version="1.3.1" />
@@ -39,7 +39,12 @@
     <Content Include="linqpad-samples/CRUD.linq">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="$(SolutionDir)README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
+  
   <!-- This PostBuild action installs the Driver -->
   <Target Condition="'$(Configuration)' == 'Debug'" Name="PostBuild1" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /i/y/s &quot;$(TargetDir)*.*&quot; &quot;%25LocalAppData%25\\LINQPad\\Drivers\\DataContext\\NetCore\\$(TargetName)&quot;" />
