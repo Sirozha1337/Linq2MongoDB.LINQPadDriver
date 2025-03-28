@@ -1,4 +1,7 @@
 <Query Kind="Statements">
+  <NuGetReference>MongoDB.Driver</NuGetReference>
+  <Namespace>MongoDB.Driver</Namespace>
+  <Namespace>MongoDB.Bson</Namespace>
 </Query>
 
 // Create Collection

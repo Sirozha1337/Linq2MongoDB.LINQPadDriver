@@ -1,6 +1,6 @@
 # This is a LINQPad driver for MongoDB
 
-[![NuGet Version](https://img.shields.io/nuget/vpre/Linq2MongoDB.LINQPadDriver)](https://www.nuget.org/packages/Linq2MongoDB.LINQPadDriver) [![License](https://img.shields.io/github/license/Sirozha1337/Linq2MongoDB.LINQPadDriver)](MIT-LICENSE.txt)
+[![NuGet Version](https://img.shields.io/nuget/v/Linq2MongoDB.LINQPadDriver)](https://www.nuget.org/packages/Linq2MongoDB.LINQPadDriver) [![License](https://img.shields.io/github/license/Sirozha1337/Linq2MongoDB.LINQPadDriver)](https://github.com/Sirozha1337/Linq2MongoDB.LINQPadDriver/blob/main/LICENSE)
 
 This driver allows you to query MongoDB using [LINQPad](https://www.linqpad.net/).
 
@@ -28,4 +28,4 @@ Setup connection
 * Collections will be exposed as capitalized names with all non-alphanumeric characters removed, e.g.: 'users-data' will be exposed as 'Usersdata'
 * Collections are exposed as IQueryable<BsonDocument>, to access the underlying collection use the `Collection` property, e.g.: `Usersdata.Collection`
 * To access the underlying MongoDB instance, use `Database`
-* See [examples](Linq2MongoDB.LINQPadDriver/linqpad-samples/CRUD.linq) for more information
+* See [examples](https://github.com/Sirozha1337/Linq2MongoDB.LINQPadDriver/blob/main/Linq2MongoDB.LINQPadDriver/linqpad-samples/CRUD.linq) for more information
