@@ -17,7 +17,7 @@
     <Title>MongoDB LINQPad driver</Title>
     <Description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

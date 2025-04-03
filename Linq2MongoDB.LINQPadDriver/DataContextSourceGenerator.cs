@@ -66,8 +66,6 @@ namespace Linq2MongoDB.LINQPadDriver
                 private readonly Lazy<QueryableMongoCollection> _{0};
                 public QueryableMongoCollection {0} => _{0}.Value;";
 
-        private static string SanitizeName(string name)
-            => new string(Array.FindAll(name.ToCharArray(), c => char.IsLetterOrDigit(c) || c == '_'));
 
         public static string GenerateSource(string nameSpace, string typeName, ICollection<CollectionItem> collectionNames)
         {

@@ -38,7 +38,7 @@ namespace Linq2MongoDB.LINQPadDriver
 
         public override IEnumerable<string> GetAssembliesToAdd(IConnectionInfo cxInfo)
         {
-            return new[] { "*", cxInfo.CustomTypeInfo.GetAbsoluteCustomAssemblyPath() };
+            return new[] { "*" };
         }
 
         public override IEnumerable<string> GetNamespacesToAdd(IConnectionInfo cxInfo)
@@ -46,7 +46,7 @@ namespace Linq2MongoDB.LINQPadDriver
             return new[]
             {
                 "MongoDB.Driver",
-                "MongoDB.Driver.Linq",
+                "MongoDB.Bson",
             };
         }
 
