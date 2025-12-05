@@ -17,7 +17,7 @@
     <Title>MongoDB LINQPad driver</Title>
     <Description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.2</Version>
+    <Version>1.0.3-alpha-mac</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
@@ -43,6 +43,28 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <!-- stop default lib/<tfm>/ assembly placement -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- pack the built driver DLL into lib/net6.0/ -->
+    <None Include="$(TargetPath)"
+          Pack="true"
+          PackagePath="lib\net6.0" />
+
+    <!-- optional but usually nice to ship alongside -->
+    <None Include="$(TargetDir)$(AssemblyName).pdb"
+          Pack="true"
+          PackagePath="lib\net6.0"
+          Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+
+    <None Include="$(TargetDir)$(AssemblyName).xml"
+          Pack="true"
+          PackagePath="lib\net6.0"
+          Condition="Exists('$(TargetDir)$(AssemblyName).xml')" />
   </ItemGroup>
   
   <!-- This PostBuild action installs the Driver -->
