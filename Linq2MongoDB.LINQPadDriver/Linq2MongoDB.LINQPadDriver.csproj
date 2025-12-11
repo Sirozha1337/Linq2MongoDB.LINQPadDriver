@@ -17,8 +17,11 @@
     <Title>MongoDB LINQPad driver</Title>
     <Description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.3-alpha-mac</Version>
+    <Version>1.0.3-alpha2-mac</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateNuspec>false</GenerateNuspec>
+    <NuspecFile>Linq2MongoDB.LINQPadDriver.nuspec</NuspecFile>
+    <NuspecProperties>Version=$(Version);Configuration=$(Configuration);OutputPath=$(OutputPath)</NuspecProperties>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="LINQPad.Reference" Version="1.3.1" />
@@ -44,29 +47,7 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-  
-  <PropertyGroup>
-    <!-- stop default lib/<tfm>/ assembly placement -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-  </PropertyGroup>
-  <ItemGroup>
-    <!-- pack the built driver DLL into lib/net6.0/ -->
-    <None Include="$(TargetPath)"
-          Pack="true"
-          PackagePath="lib\net6.0" />
 
-    <!-- optional but usually nice to ship alongside -->
-    <None Include="$(TargetDir)$(AssemblyName).pdb"
-          Pack="true"
-          PackagePath="lib\net6.0"
-          Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
-
-    <None Include="$(TargetDir)$(AssemblyName).xml"
-          Pack="true"
-          PackagePath="lib\net6.0"
-          Condition="Exists('$(TargetDir)$(AssemblyName).xml')" />
-  </ItemGroup>
-  
   <!-- This PostBuild action installs the Driver -->
   <Target Condition="'$(Configuration)' == 'Debug'" Name="PostBuild1" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /i/y/s &quot;$(TargetDir)*.*&quot; &quot;%25LocalAppData%25\\LINQPad\\Drivers\\DataContext\\NetCore\\$(TargetName)&quot;" />

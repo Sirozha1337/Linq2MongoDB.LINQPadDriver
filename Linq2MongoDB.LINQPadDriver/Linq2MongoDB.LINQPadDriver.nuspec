@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Linq2MongoDB.LINQPadDriver</id>
+    <version>$Version$</version>
+    <title>MongoDB LINQPad driver</title>
+    <authors>Sirozha1337</authors>
+    <description>LINQPad Driver</description>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/Sirozha1337/Linq2MongoDB.LINQPadDriver</projectUrl>
+    <description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</description>
+    <tags>linqpaddriver linqpad linqpad-samples mongo mongodb</tags>
+    <repository type="git" url="https://github.com/Sirozha1337/Linq2MongoDB.LINQPadDriver" />
+
+    <dependencies>
+      <group targetFramework="net6.0">
+        <dependency id="LINQPad.Reference" version="1.3.1" exclude="Build,Analyzers" />
+        <dependency id="MongoDB.Driver" version="3.2.1" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+
+    <frameworkReferences>
+      <group targetFramework="net6.0-windows7.0">
+        <frameworkReference name="Microsoft.WindowsDesktop.App.WPF" />
+      </group>
+    </frameworkReferences>
+
+    <contentFiles>
+      <files include="any/net6.0-windows7.0/Connection.png" buildAction="Content" />
+      <files include="any/net6.0-windows7.0/FailedConnection.png" buildAction="Content" />
+      <files include="any/net6.0-windows7.0/linqpad-samples/CRUD.linq" buildAction="Content" />
+    </contentFiles>
+  </metadata>
+
+  <files>
+    <file src="$OutputPath$\**\*.*" target="lib\net6.0" />
+    <file src="$OutputPath$\Connection.png" target="contentFiles\any\net6.0-windows7.0" />
+    <file src="$OutputPath$\FailedConnection.png" target="contentFiles\any\net6.0-windows7.0" />
+    <file src="$OutputPath$\linqpad-samples\CRUD.linq" target="contentFiles\any\net6.0-windows7.0\linqpad-samples" />
+    <file src="..\README.md" target="\" />
+  </files>
+</package>
