@@ -2,7 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWpf>true</UseWpf>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>linqpaddriver;linqpad;linqpad-samples;mongo;mongodb;</PackageTags>
     <LangVersion>8.0</LangVersion>
     <RootNamespace>Linq2MongoDB.LINQPadDriver</RootNamespace>
@@ -17,8 +16,9 @@
     <Title>MongoDB LINQPad driver</Title>
     <Description>MongoDB LINQPad driver that allows you to access MongoDB using Linq queries without having to provide custom assembly types</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.3</Version>
+    <Version>1.1.0</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
     <GenerateNuspec>false</GenerateNuspec>
     <NuspecFile>Linq2MongoDB.LINQPadDriver.nuspec</NuspecFile>
     <NuspecProperties>Version=$(Version);Configuration=$(Configuration);OutputPath=$(OutputPath)</NuspecProperties>
@@ -43,7 +43,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <Content Update="linqpad-samples\*.linq">
+    <Content Include="linqpad-samples\*.linq">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
