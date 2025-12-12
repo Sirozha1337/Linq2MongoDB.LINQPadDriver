@@ -146,7 +146,7 @@ namespace Linq2MongoDB.LINQPadDriver
             Compile(cxInfo, source, assemblyToBuild.CodeBase, new[]{
                     typeof(IMongoDatabase).Assembly.Location,
                     typeof(BsonDocument).Assembly.Location,
-                    typeof(QueryableMongoCollection).Assembly.Location
+                    typeof(QueryableMongoCollection<>).Assembly.Location
             });
 
             // We need to tell LINQPad what to display in the TreeView on the left (Schema Explorer):

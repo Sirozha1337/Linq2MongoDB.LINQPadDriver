@@ -8,13 +8,20 @@ using MongoDB.Driver;
 
 namespace Linq2MongoDB.LINQPadDriver
 {
-    public class QueryableMongoCollection : IQueryable<BsonDocument>
+    public class QueryableMongoCollection : QueryableMongoCollection<BsonDocument>
     {
-        private readonly IMongoCollection<BsonDocument> _mongoCollection;
+        public QueryableMongoCollection(IMongoCollection<BsonDocument> collection) : base(collection)
+        {
+        }
+    }
+
+    public class QueryableMongoCollection<T> : IQueryable<T> where T : class
+    {
+        private readonly IMongoCollection<T> _mongoCollection;
         private readonly Expression _expression;
         private readonly IQueryProvider _provider;
 
-        public QueryableMongoCollection(IMongoCollection<BsonDocument> mongoCollection)
+        public QueryableMongoCollection(IMongoCollection<T> mongoCollection)
         {
             _mongoCollection = mongoCollection;
             var queryable = mongoCollection.AsQueryable();
@@ -22,60 +29,67 @@ namespace Linq2MongoDB.LINQPadDriver
             _expression = queryable.Expression;
         }
 
-        public Type ElementType => typeof(BsonDocument);
+        public Type ElementType => typeof(T);
 
         public Expression Expression => _expression;
 
         public IQueryProvider Provider => _provider;
 
-        public IEnumerator<BsonDocument> GetEnumerator() => ((IEnumerable<BsonDocument>)_provider.Execute(_expression))!.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)_provider.Execute(_expression))!.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_provider.Execute(_expression))!.GetEnumerator();
 
-        public IMongoCollection<BsonDocument> Collection => _mongoCollection;
+        public IMongoCollection<T> Collection => _mongoCollection;
 
-        public ReplaceOneResult ReplaceOne(BsonDocument value)
+        public QueryableMongoCollection<TNew> As<TNew>() where TNew : class
         {
-            if (value["_id"] == null)
+            var newCollection = _mongoCollection.Database.GetCollection<TNew>(_mongoCollection.CollectionNamespace.CollectionName);
+            return new QueryableMongoCollection<TNew>(newCollection);
+        }
+
+        public ReplaceOneResult ReplaceOne(T value)
+        {
+            var bsonDoc = GetBsonDoc(value);
+            if ( bsonDoc["_id"] == null)
             {
                 throw new Exception("ReplaceOne requires the document to have an _id field. Use .Collection to run queries directly on MongoCollection.");
             }
 
-            return _mongoCollection.ReplaceOne(Builders<BsonDocument>.Filter.Eq(o => o["_id"], value["_id"]), value);
+            return _mongoCollection.ReplaceOne(Builders<T>.Filter.Eq("_id", bsonDoc["_id"]), value);
         }
 
-        public ReplaceOneResult ReplaceOne(Expression<Func<BsonDocument, bool>> filter, BsonDocument value)
-            => _mongoCollection.ReplaceOne(Builders<BsonDocument>.Filter.Where(filter), value);
+        public ReplaceOneResult ReplaceOne(Expression<Func<T, bool>> filter, T value)
+            => _mongoCollection.ReplaceOne(Builders<T>.Filter.Where(filter), value);
 
-        public DeleteResult DeleteOne(Expression<Func<BsonDocument, bool>> filter)
-            => _mongoCollection.DeleteOne(Builders<BsonDocument>.Filter.Where(filter));
+        public DeleteResult DeleteOne(Expression<Func<T, bool>> filter)
+            => _mongoCollection.DeleteOne(Builders<T>.Filter.Where(filter));
 
-        public DeleteResult DeleteMany(Expression<Func<BsonDocument, bool>> filter)
-            => _mongoCollection.DeleteMany(Builders<BsonDocument>.Filter.Where(filter));
+        public DeleteResult DeleteMany(Expression<Func<T, bool>> filter)
+            => _mongoCollection.DeleteMany(Builders<T>.Filter.Where(filter));
 
-        public void InsertOne(BsonDocument value)
+        public void InsertOne(T value)
             => _mongoCollection.InsertOne(value);
 
         public void InsertOne(object value)
-            => _mongoCollection.InsertOne(value.ToBsonDocument());
+            => _mongoCollection.InsertOne(GetAsTargetType(value));
 
-        public void InsertMany(IEnumerable<BsonDocument> value)
+        public void InsertMany(IEnumerable<T> value)
             => _mongoCollection.InsertMany(value);
 
         public void InsertMany(IEnumerable<object> value)
-            => _mongoCollection.InsertMany(value.Select(v => v.ToBsonDocument()));
+            => _mongoCollection.InsertMany(value.Select(GetAsTargetType));
 
-        public long Count(Expression<Func<BsonDocument, bool>> filter)
+        public long Count(Expression<Func<T, bool>> filter)
             => _mongoCollection.CountDocuments(filter);
 
-        public UpdateResult UpdateMany(Expression<Func<BsonDocument, bool>> filter, Func<BsonDocument, BsonDocument> updateDefinition)
+        public UpdateResult UpdateMany(Expression<Func<T, bool>> filter, Func<T, T> updateDefinition)
         {
             var matchedCount = 0L;
             var modifiedCount = 0L;
             var upsertedId = new List<BsonValue>();
 
             var objectsToUpdate = this.Where(filter).ToList();
-            if (objectsToUpdate.Any(o => o["_id"] == null))
+            if (objectsToUpdate.Any(o => GetBsonDoc(o)["_id"] == null))
             {
                 throw new Exception("UpdateMany requires all documents to have an _id field. Use .Collection to run queries directly on MongoCollection.");
             }
@@ -92,11 +106,35 @@ namespace Linq2MongoDB.LINQPadDriver
 
                 matchedCount += result.MatchedCount;
                 modifiedCount += result.ModifiedCount;
-                upsertedId.Add(objectToUpdate["_id"]);
+                upsertedId.Add(GetBsonDoc(objectToUpdate)["_id"]);
             }
 
             return new UpdateManyResult(matchedCount, modifiedCount, upsertedId);
         }
+
+        private BsonDocument GetBsonDoc(object value) =>
+            value switch
+            {
+                BsonDocument bsonDoc => bsonDoc,
+                _ => value.ToBsonDocument(),
+            };
+
+        private T GetAsTargetType(object value)
+        {
+            if (typeof(T) == typeof(BsonDocument))
+            {
+                return GetBsonDoc(value) as T;
+            }
+
+            if (value is T vt)
+            {
+                return vt;
+            }
+
+            throw new NotSupportedException(
+                $"The type {typeof(T).FullName} is not supported. Use .Collection to run queries directly on MongoCollection.");
+        }
+
     }
 
     public class UpdateManyResult : UpdateResult
